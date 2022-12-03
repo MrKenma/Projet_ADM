@@ -12,8 +12,11 @@ namespace ProjetMath {
         public int StationsPrioritairesOccupées = 0;
         public int StationsInoccupées = 0;
         public int PrioritairesDéchus = 0;
+        public int nbStations;
 
-        public Couts() { }
+        public Couts(int nbStations) {
+            this.nbStations = nbStations;
+        }
     }
     class Program {
         // Générer une suite de nombres pseudo-aléatoires à partir de valeurs de X0, a, c et m
@@ -116,11 +119,147 @@ namespace ProjetMath {
         }
 
         // Partie 2 : implémentation du DA
+        static void initTab(int[] tab) {
+            for (int i = 0; i < tab.Length; i++) {
+                tab[i] = 0;
+            }
+        }
+
+        static int nbArriveesGenerees(int x0, int a, int c, int m, out int nbArrivees) {
+            int x1 = (a * x0 + c) % m;
+            double u1 = (double)x1 / m;
+
+            if (u1 < 0.1827)
+                nbArrivees = 0;
+            else if (u1 < 0.4932)
+                nbArrivees = 1;
+            else if (u1 < 0.7572)
+                nbArrivees = 2;
+            else if (u1 < 0.9068)
+                nbArrivees = 3;
+            else if (u1 < 0.9704)
+                nbArrivees = 4;
+            else if (u1 < 0.9920)
+                nbArrivees = 5;
+            else if (u1 < 0.9981)
+                nbArrivees = 6;
+            else if (u1 < 0.9996)
+                nbArrivees = 7;
+            else if (u1 < 0.9999)
+                nbArrivees = 8;
+            else
+                nbArrivees = 9;
+
+            return x1;
+        }
+
+        static int nbClientsPrioritaires(int nbArrivees, int x0, int a, int c, int m, out int nbOrdinaires, out int nbPrioritaires) {
+            int x1 = 0;
+            double u1 = 0;
+            nbOrdinaires = 0;
+            nbPrioritaires = 0;
+
+            for (int i = 0; i < nbArrivees; i++) {
+                x1 = (a * x0 + c) % m;
+                u1 = (double)x1 / m;
+
+                if (u1 < 0.30)
+                    nbPrioritaires++;
+                else
+                    nbOrdinaires++;
+
+                x0 = x1;
+            }
+            return x1;
+        }
+
+        static int dureeGeneree(int x0, int a, int c, int m, int i, int[] stations) {
+            int x1 = (a * x0 + c) % m;
+            double u1 = (double)x1 / m;
+
+            if (u1 < 18 / 59)
+                stations[i] = 1;
+            else if (u1 < 39 / 59)
+                stations[i] = 2;
+            else if (u1 < 54 / 59)
+                stations[i] = 3;
+            else if (u1 < 57 / 59)
+                stations[i] = 4;
+            else if (u1 < 58 / 59)
+                stations[i] = 5;
+            else
+                stations[i] = 6;
+
+            return x1;
+        }
+
         static int NbStationsOptimal(int nbStationsMin, int nbStationsMax, int tempsSimulation, int X0, int a, int c, int m) {
             Couts[] couts = new Couts[nbStationsMax - nbStationsMin + 1];
+            int iCouts = 0;
 
             for (int nbStations = nbStationsMin; nbStations <= nbStationsMax; nbStations++) {
+                Couts cout = new Couts(nbStations);
+                int[] stations = new int[nbStations];
+                int fileOrdinaire = 0;
+                int filePrioritaire = 0;
 
+                initTab(stations);
+
+                for (int temps = 0; temps < tempsSimulation; temps++) {
+                    int nbArrivées, nbOrdinaires, nbPrioritaires, nbPrioritairesDéchus;
+                    X0 = nbArriveesGenerees(X0, a, c, m, out nbArrivées);
+                    X0 = nbClientsPrioritaires(nbArrivées, X0, a, c, m, out nbOrdinaires, out nbPrioritaires);
+                    
+                    while (filePrioritaire < 5 && nbPrioritaires > 0) {
+                        filePrioritaire++;
+                        nbPrioritaires--;
+                    }
+                    nbPrioritairesDéchus = nbPrioritaires;
+                    fileOrdinaire += nbOrdinaires + nbPrioritairesDéchus;
+                    cout.PrioritairesDéchus += 30 * nbPrioritairesDéchus;
+                    
+                    if (stations[0] == 0) {
+                        if (filePrioritaire != 0) {
+                            filePrioritaire--;
+                            X0 = dureeGeneree(X0, a, c, m, 0, stations);
+                            cout.ClientsPrioritaires += 1 / 60 * stations[0] * 40;
+                            cout.StationsPrioritairesOccupées += 1 / 60 * stations[0] * 75;
+                            stations[0]--;
+                        } else {
+                            cout.StationsInoccupées += 1 / 60 * 20;
+                        }
+                    } else {
+                        stations[0]--;
+                    }
+
+                    for (int iStation = 1; iStation < nbStations; iStation++) {
+                        if (stations[iStation] == 0) {
+                            if (fileOrdinaire != 0) {
+                                fileOrdinaire--;
+                                X0 = dureeGeneree(X0, a, c, m, iStation, stations);
+                                cout.ClientsOrdinaires += 1 / 60 * stations[iStation] * 25;
+                                cout.StationsOrdinairesOccupées += 1 / 60 * stations[iStation] * 50;
+                                stations[iStation]--;
+                            } else if (filePrioritaire != 0) {
+                                filePrioritaire--;
+                                X0 = dureeGeneree(X0, a, c, m, iStation, stations);
+                                cout.ClientsPrioritaires += 1 / 60 * stations[iStation] * 40;
+                                cout.StationsOrdinairesOccupées += 1 / 60 * stations[iStation] * 50;
+                                stations[iStation]--;
+                            } else {
+                                cout.StationsInoccupées += 1 / 60 * 20;
+                            }
+                        } else {
+                            stations[iStation]--;
+                        }
+                    }
+
+                    cout.ClientsPrioritaires += 1 / 60 * filePrioritaire * 40;
+                    cout.ClientsOrdinaires += 1 / 60 * fileOrdinaire * 25;
+                }
+
+                couts[iCouts] = cout;
+                iCouts++;
             }
 
             return 1;
