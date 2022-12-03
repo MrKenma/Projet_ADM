@@ -219,7 +219,7 @@ namespace ProjetMath {
         }
 
         static int NbClientsPrioritaires(int nbArrivees, int x0, int a, int c, int m, out int nbOrdinaires, out int nbPrioritaires) {
-            int x1 = 0;
+            int x1 = x0;
             double u1 = 0;
             nbOrdinaires = 0;
             nbPrioritaires = 0;
@@ -280,6 +280,7 @@ namespace ProjetMath {
                     X0 = NbClientsPrioritaires(nbArrivées, X0, a, c, m, out nbOrdinaires, out nbPrioritaires);
 
                     Console.WriteLine("Temps : " + (temps + 1));
+                    Console.WriteLine(nbArrivées);
 
                     while (filePrioritaire < 5 && nbPrioritaires > 0) {
                         filePrioritaire++;
@@ -304,7 +305,6 @@ namespace ProjetMath {
                     }
 
                     for (int iStation = 1; iStation < nbStations; iStation++) {
-                        Console.WriteLine(stations[iStation]);
                         if (stations[iStation] == 0) {
                             if (fileOrdinaire != 0) {
                                 fileOrdinaire--;
@@ -354,9 +354,8 @@ namespace ProjetMath {
             int a = 261;
             int c = 7;
             int m = 13000;
-            bool nombresValides;
+            bool nombresValides = VerificationValeurs(X0, a, c, m);
 
-            nombresValides = VerificationValeurs(X0, a, c, m);
             if (!nombresValides) {
                 Console.WriteLine("Les nombres ne sont pas valides");
             } else {
