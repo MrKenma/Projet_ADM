@@ -5,20 +5,23 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace ProjetMath {
+    #region classeCouts
     class Couts {
-        public int ClientsPrioritaires = 0;
-        public int ClientsOrdinaires = 0;
-        public int StationsOrdinairesOccupées = 0;
-        public int StationsPrioritairesOccupées = 0;
-        public int StationsInoccupées = 0;
-        public int PrioritairesDéchus = 0;
+        public double ClientsPrioritaires = 0;
+        public double ClientsOrdinaires = 0;
+        public double StationsOrdinairesOccupées = 0;
+        public double StationsPrioritairesOccupées = 0;
+        public double StationsInoccupées = 0;
+        public double PrioritairesDéchus = 0;
         public int nbStations;
 
         public Couts(int nbStations) {
             this.nbStations = nbStations;
         }
     }
+    #endregion 
     class Program {
+        #region Partie 1 : Génération d'une suite de nombres aléatoires
         // Générer une suite de nombres pseudo-aléatoires à partir de valeurs de X0, a, c et m
         // Vérifier 
         static int PGCD(int a, int b) {
@@ -32,7 +35,7 @@ namespace ProjetMath {
             return a;
         }
 
-        static bool estPremier(int nb) {
+        static bool EstPremier(int nb) {
             if (nb <= 3) {
                 return true;
             } else {
@@ -58,7 +61,7 @@ namespace ProjetMath {
 
             // Pour tout p, facteur premier de m, on a (a-1) multiple de p
             for (int i = 1; i < m; i++) {
-                if (m % i == 0 && estPremier(i)) {
+                if (m % i == 0 && EstPremier(i)) {
                     facteursPremiersDeM.Add(i);
                 }
             }
@@ -107,8 +110,41 @@ namespace ProjetMath {
                 return VerificationHullDobell(X0, a, c, m);
             }
         }
+        #endregion
+        #region Partie 1 : Test des courses
+        static int CalculFactorielle(int a) {
+            int fact = 1;
+            for (int x = 1; x <= a; x++) {
+                fact *= x;
+            }
 
-        static void TestDesCourses(int[] nombres) {
+            return fact;
+        }
+
+        static void CreationTabSaut(int[] nombresAleatoires, int[] tabSaut) {
+            int i = 0;
+            int nbSaut = 0;
+            int saut;
+            int val;
+
+            while (i < nombresAleatoires.Length) {
+                saut = 1;
+                val = nombresAleatoires[i];
+
+                while (val < nombresAleatoires[i + 1]) {
+                    saut++;
+                    i++;
+                    val = nombresAleatoires[i];
+                }
+
+                i += 2;
+                tabSaut[nbSaut] = saut;
+                nbSaut++;
+
+            }
+        }
+
+        static void TestDesCourses(int[] nombres, int[] tabSaut) {
             // 6 étapes :
             // Etape 1 : poser une hypothèse H0 (suite générée acceptable ou non)
             // Etape 2 : fixer le niveau d'incertitude alpha (en général alpha = 5%)
@@ -116,16 +152,45 @@ namespace ProjetMath {
             // Etape 4 : vérifier les contraintes à respecter pour chaque test et, le cas échéant, retourner à l'étape 3 en effectuant les regroupements
             // Etape 5 : établir la zone de non-rejet en fonction du nombre de degrés de liberté
             // Etape 6 : prendre une décision, rejet ou non-rejet de l'hypothèse
-        }
 
+            CreationTabSaut(nombres, tabSaut);
+
+            int max = 0;
+
+            for (int i = 0; i < tabSaut.Length; i++) {
+                if (max < tabSaut[i]) {
+                    max = tabSaut[i];
+                }
+            }
+
+            int[] tabCourses = new int[max];
+
+            for (int i = 0; i < max; i++) {
+                tabCourses[tabSaut[i] - 1]++;
+                i++;
+            }
+
+            int pi;
+            for (int i = 0; i < tabSaut.Length; i++) {
+                //Console.WriteLine(i + 1);
+                //Console.WriteLine(tabSaut[i]);
+                //pi = i / CalculFactorielle(i + 1);
+                Console.WriteLine(i);
+                Console.WriteLine(CalculFactorielle(i + 1));
+                Console.WriteLine("\n");
+                //Console.WriteLine(pi);                
+            }
+        }
+        #endregion
+        #region Partie 2 : Calcul du nombre de stations optimal
         // Partie 2 : implémentation du DA
-        static void initTab(int[] tab) {
+        static void InitTab(int[] tab) {
             for (int i = 0; i < tab.Length; i++) {
                 tab[i] = 0;
             }
         }
 
-        static int nbArriveesGenerees(int x0, int a, int c, int m, out int nbArrivees) {
+        static int NbArriveesGenerees(int x0, int a, int c, int m, out int nbArrivees) {
             int x1 = (a * x0 + c) % m;
             double u1 = (double)x1 / m;
 
@@ -153,7 +218,7 @@ namespace ProjetMath {
             return x1;
         }
 
-        static int nbClientsPrioritaires(int nbArrivees, int x0, int a, int c, int m, out int nbOrdinaires, out int nbPrioritaires) {
+        static int NbClientsPrioritaires(int nbArrivees, int x0, int a, int c, int m, out int nbOrdinaires, out int nbPrioritaires) {
             int x1 = 0;
             double u1 = 0;
             nbOrdinaires = 0;
@@ -173,19 +238,19 @@ namespace ProjetMath {
             return x1;
         }
 
-        static int dureeGeneree(int x0, int a, int c, int m, int i, int[] stations) {
+        static int DureeGeneree(int x0, int a, int c, int m, int i, int[] stations) {
             int x1 = (a * x0 + c) % m;
             double u1 = (double)x1 / m;
 
-            if (u1 < 18 / 59)
+            if (u1 < 18.0 / 59)
                 stations[i] = 1;
-            else if (u1 < 39 / 59)
+            else if (u1 < 39.0 / 59)
                 stations[i] = 2;
-            else if (u1 < 54 / 59)
+            else if (u1 < 54.0 / 59)
                 stations[i] = 3;
-            else if (u1 < 57 / 59)
+            else if (u1 < 57.0 / 59)
                 stations[i] = 4;
-            else if (u1 < 58 / 59)
+            else if (u1 < 58.0 / 59)
                 stations[i] = 5;
             else
                 stations[i] = 6;
@@ -196,75 +261,94 @@ namespace ProjetMath {
         static int NbStationsOptimal(int nbStationsMin, int nbStationsMax, int tempsSimulation, int X0, int a, int c, int m) {
             Couts[] couts = new Couts[nbStationsMax - nbStationsMin + 1];
             int iCouts = 0;
+            int X0Init = X0;
 
             for (int nbStations = nbStationsMin; nbStations <= nbStationsMax; nbStations++) {
-                Couts cout = new Couts(nbStations);
+                couts[iCouts] = new Couts(nbStations);
                 int[] stations = new int[nbStations];
                 int fileOrdinaire = 0;
                 int filePrioritaire = 0;
+                X0 = X0Init;
 
-                initTab(stations);
+                //InitTab(stations);
+
+                Console.WriteLine("Nombre de stations : " + nbStations);
 
                 for (int temps = 0; temps < tempsSimulation; temps++) {
                     int nbArrivées, nbOrdinaires, nbPrioritaires, nbPrioritairesDéchus;
-                    X0 = nbArriveesGenerees(X0, a, c, m, out nbArrivées);
-                    X0 = nbClientsPrioritaires(nbArrivées, X0, a, c, m, out nbOrdinaires, out nbPrioritaires);
-                    
+                    X0 = NbArriveesGenerees(X0, a, c, m, out nbArrivées);
+                    X0 = NbClientsPrioritaires(nbArrivées, X0, a, c, m, out nbOrdinaires, out nbPrioritaires);
+
+                    Console.WriteLine("Temps : " + (temps + 1));
+
                     while (filePrioritaire < 5 && nbPrioritaires > 0) {
                         filePrioritaire++;
                         nbPrioritaires--;
                     }
                     nbPrioritairesDéchus = nbPrioritaires;
                     fileOrdinaire += nbOrdinaires + nbPrioritairesDéchus;
-                    cout.PrioritairesDéchus += 30 * nbPrioritairesDéchus;
-                    
+                    couts[iCouts].PrioritairesDéchus += 30 * nbPrioritairesDéchus;
+
                     if (stations[0] == 0) {
                         if (filePrioritaire != 0) {
                             filePrioritaire--;
-                            X0 = dureeGeneree(X0, a, c, m, 0, stations);
-                            cout.ClientsPrioritaires += 1 / 60 * stations[0] * 40;
-                            cout.StationsPrioritairesOccupées += 1 / 60 * stations[0] * 75;
+                            X0 = DureeGeneree(X0, a, c, m, 0, stations);
+                            couts[iCouts].ClientsPrioritaires += 1.0 / 60 * stations[0] * 40;
+                            couts[iCouts].StationsPrioritairesOccupées += 1.0 / 60 * stations[0] * 75;
                             stations[0]--;
                         } else {
-                            cout.StationsInoccupées += 1 / 60 * 20;
+                            couts[iCouts].StationsInoccupées += 1.0 / 60 * 20;
                         }
                     } else {
                         stations[0]--;
                     }
 
                     for (int iStation = 1; iStation < nbStations; iStation++) {
+                        Console.WriteLine(stations[iStation]);
                         if (stations[iStation] == 0) {
                             if (fileOrdinaire != 0) {
                                 fileOrdinaire--;
-                                X0 = dureeGeneree(X0, a, c, m, iStation, stations);
-                                cout.ClientsOrdinaires += 1 / 60 * stations[iStation] * 25;
-                                cout.StationsOrdinairesOccupées += 1 / 60 * stations[iStation] * 50;
+                                X0 = DureeGeneree(X0, a, c, m, iStation, stations);
+                                couts[iCouts].ClientsOrdinaires += 1.0 / 60 * stations[iStation] * 25;
+                                couts[iCouts].StationsOrdinairesOccupées += 1.0 / 60 * stations[iStation] * 50;
                                 stations[iStation]--;
                             } else if (filePrioritaire != 0) {
                                 filePrioritaire--;
-                                X0 = dureeGeneree(X0, a, c, m, iStation, stations);
-                                cout.ClientsPrioritaires += 1 / 60 * stations[iStation] * 40;
-                                cout.StationsOrdinairesOccupées += 1 / 60 * stations[iStation] * 50;
+                                X0 = DureeGeneree(X0, a, c, m, iStation, stations);
+                                couts[iCouts].ClientsPrioritaires += 1.0 / 60 * stations[iStation] * 40;
+                                couts[iCouts].StationsOrdinairesOccupées += 1.0 / 60 * stations[iStation] * 50;
                                 stations[iStation]--;
                             } else {
-                                cout.StationsInoccupées += 1 / 60 * 20;
+                                couts[iCouts].StationsInoccupées += 1.0 / 60 * 20;
                             }
                         } else {
                             stations[iStation]--;
                         }
                     }
 
-                    cout.ClientsPrioritaires += 1 / 60 * filePrioritaire * 40;
-                    cout.ClientsOrdinaires += 1 / 60 * fileOrdinaire * 25;
+                    couts[iCouts].ClientsPrioritaires += 1.0 / 60 * filePrioritaire * 40;
+                    couts[iCouts].ClientsOrdinaires += 1.0 / 60 * fileOrdinaire * 25;
                 }
 
-                couts[iCouts] = cout;
                 iCouts++;
             }
 
-            return 1;
-        }
+            double coutOptimal = double.MaxValue;
+            int iCoutOptimal = 0;
+            int i = 0;
+            // Vérification des valeurs
+            foreach (Couts cout in couts) {
+                double sommeCouts = cout.ClientsOrdinaires + cout.ClientsPrioritaires + cout.PrioritairesDéchus + cout.StationsInoccupées + cout.StationsOrdinairesOccupées + cout.StationsPrioritairesOccupées;
+                if (sommeCouts < coutOptimal) {
+                    coutOptimal = sommeCouts;
+                    iCoutOptimal = i;
+                }
+                i++;
+            }
 
+            return (int)couts[0].ClientsOrdinaires;
+        }
+        #endregion
         static void Main(string[] args) {
             int X0 = 19;  
             int a = 261;
@@ -281,15 +365,20 @@ namespace ProjetMath {
                 int X1;
 
                 // éviter de placer les valeurs dans un tableau, ça va utiliser beaucoup de place mémoire
+                /*
                 nombresAleatoires[0] = X0;
                 for (int i = 1; i < m; i++) {
                     X1 = (a * X0 + c) % m;
                     nombresAleatoires[i] = X1;
                     X0 = X1;
                 }
+                */
                 // Vérifier si la suite est assez longue pour nos tests => Voir DA
                 // Si non : 600 * (1 + 9 + 1 + (9 * 1 + 1)) = 600 * 21 = 12600 
-                TestDesCourses(nombresAleatoires);
+                //TestDesCourses(nombresAleatoires);
+
+                int nbStationsOptimal = NbStationsOptimal(2, 4, 600, X0, a, c, m);
+                Console.WriteLine($"Nombre de stations optimal : {nbStationsOptimal}");
             }
             Console.ReadLine();
         }
