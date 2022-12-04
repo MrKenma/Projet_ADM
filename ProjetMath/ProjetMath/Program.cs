@@ -112,36 +112,39 @@ namespace ProjetMath {
         }
         #endregion
         #region Partie 1 : Test des courses
-        static int CalculFactorielle(int a) {
-            int fact = 1;
+        static void CreationTabSaut(int[] nombres, int[] tabSaut) {
+
+            int i = 0;
+            int nbSaut = 0;
+            int saut;
+            int val;
+            int cptIgnored = 0;
+
+            while (i < (nombres.Length - 1)) {
+                saut = 1;
+                val = nombres[i];
+
+
+                while (i < (nombres.Length - 1) && val < nombres[i + 1]) {
+                    saut++;
+                    i++;
+                    val = nombres[i];
+                }
+                cptIgnored++;
+                i += 2;
+                tabSaut[nbSaut] = saut;
+                nbSaut++;
+            }
+            Console.WriteLine("cptIgnored : " + cptIgnored);
+        }
+
+        static double CalculFactorielle(int a) {
+            double fact = 1;
             for (int x = 1; x <= a; x++) {
                 fact *= x;
             }
 
             return fact;
-        }
-
-        static void CreationTabSaut(int[] nombresAleatoires, int[] tabSaut) {
-            int i = 0;
-            int nbSaut = 0;
-            int saut;
-            int val;
-
-            while (i < nombresAleatoires.Length) {
-                saut = 1;
-                val = nombresAleatoires[i];
-
-                while (val < nombresAleatoires[i + 1]) {
-                    saut++;
-                    i++;
-                    val = nombresAleatoires[i];
-                }
-
-                i += 2;
-                tabSaut[nbSaut] = saut;
-                nbSaut++;
-
-            }
         }
 
         static void TestDesCourses(int[] nombres, int[] tabSaut) {
@@ -158,29 +161,38 @@ namespace ProjetMath {
             int max = 0;
 
             for (int i = 0; i < tabSaut.Length; i++) {
+
                 if (max < tabSaut[i]) {
                     max = tabSaut[i];
                 }
             }
 
-            int[] tabCourses = new int[max];
 
-            for (int i = 0; i < max; i++) {
-                tabCourses[tabSaut[i] - 1]++;
-                i++;
+            int[] tabCourses = new int[max];
+            int valeur = 0;
+
+            for (int i = 0; i < tabSaut.Length; i++) {
+
+                if (tabSaut[i] > 0) {
+                    valeur = tabSaut[i];
+
+                    tabCourses[valeur - 1]++;
+                }
             }
 
-            int pi;
-            for (int i = 0; i < tabSaut.Length; i++) {
-                //Console.WriteLine(i + 1);
-                //Console.WriteLine(tabSaut[i]);
-                //pi = i / CalculFactorielle(i + 1);
-                Console.WriteLine(i);
-                Console.WriteLine(CalculFactorielle(i + 1));
+            double pi;
+            double fact;
+            for (int i = 0; i < max; i++) {
+                Console.WriteLine(i + 1);
+                Console.WriteLine(tabCourses[i]);
+                fact = CalculFactorielle(i + 2);
+                pi = (i + 1) / fact;
+                Console.WriteLine(pi);
                 Console.WriteLine("\n");
-                //Console.WriteLine(pi);                
+
             }
         }
+
         #endregion
         #region Partie 2 : Calcul du nombre de stations optimal
         // Partie 2 : implémentation du DA
