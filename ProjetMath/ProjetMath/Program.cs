@@ -119,7 +119,7 @@ namespace ProjetMath {
                 Console.WriteLine(" 0 <= X0 < m : KO");
                 return false;
             } else {
-                Console.WriteLine(" m > 0 : KO\n 0 <= a < m : OK\n 0 <= c < m : OK\n 0 <= X0 < m : OK\n");
+                Console.WriteLine(" m > 0 : OK\n 0 <= a < m : OK\n 0 <= c < m : OK\n 0 <= X0 < m : OK\n");
                 // c : si c = 0, calculs rapides mais période courte => à éviter
                 if (c == 0) {
                     Console.WriteLine(" ATTENTION : c = 0 -> les calculs seront rapides mais la période courte\n");
@@ -133,7 +133,7 @@ namespace ProjetMath {
         }
         #endregion
         #region Partie 1 : Test des courses
-        static void CreationTabSaut(int[] nombres, int[] tabSaut) {
+        static int CreationTabSaut(int[] nombres, int[] tabSaut) {
             int i = 0;
             int nbSaut = 0;
             int saut;
@@ -144,18 +144,20 @@ namespace ProjetMath {
                 saut = 1;
                 val = nombres[i];
 
-
                 while (i < (nombres.Length - 1) && val < nombres[i + 1]) {
                     saut++;
                     i++;
                     val = nombres[i];
                 }
+
                 cptIgnored++;
                 i += 2;
                 tabSaut[nbSaut] = saut;
                 nbSaut++;
             }
             Console.WriteLine($" Nombre de valeurs ignorées : {cptIgnored}\n");
+
+            return cptIgnored;
         }
 
         static double CalculFactorielle(int a) {
@@ -178,17 +180,16 @@ namespace ProjetMath {
 
             Console.WriteLine("-------------------- Test des courses --------------------");
 
-            CreationTabSaut(nombres, tabSaut);
+            int cptIgnored = CreationTabSaut(nombres, tabSaut);
+            int n = nombres.Length - cptIgnored;
 
             int max = 0;
 
             for (int i = 0; i < tabSaut.Length; i++) {
-
                 if (max < tabSaut[i]) {
                     max = tabSaut[i];
                 }
             }
-
 
             int[] tabCourses = new int[max];
             int valeur = 0;
@@ -202,14 +203,35 @@ namespace ProjetMath {
                 }
             }
 
-            double pi;
-            double fact;
+            // Regroupement
+            double[] pi = new double[max];
             for (int i = 0; i < max; i++) {
-                Console.WriteLine($" Taille du saut : {i + 1}");
-                Console.WriteLine($" Nombre de sauts (ri) : {tabCourses[i]}");
-                fact = CalculFactorielle(i + 2);
-                pi = (i + 1) / fact;
-                Console.WriteLine($" Probabilité (pi) : {pi}\n");
+                double fact = CalculFactorielle(i + 2);
+                pi[i] = (i + 1) / fact;
+            }
+
+            int iVal = max - 1;
+            while (iVal >= 0) {
+                if (n * pi[iVal] < 5) {
+                    if (iVal == 0) {
+                        Console.WriteLine("Regroupement impossible, n < 5 !");
+                    } else {
+                        tabCourses[iVal - 1] += tabCourses[iVal];
+                        pi[iVal - 1] += pi[iVal];
+                        tabCourses[iVal] = 0;
+                        pi[iVal] = 0;
+                    }
+                }
+
+                iVal--;
+            }
+
+            for (int i = 0; i < max; i++) {
+                if (tabCourses[i] != 0) {
+                    Console.WriteLine($" Taille du saut : {i + 1}");
+                    Console.WriteLine($" Nombre de sauts (ri) : {tabCourses[i]}");
+                    Console.WriteLine($" Probabilité (pi) : {pi[i]}\n");
+                }
             }
         }
 
@@ -244,9 +266,9 @@ namespace ProjetMath {
             return x1;
         }
 
-        static int NbClientsPrioritaires(int nbArrivees, int x0, int a, int c, int m, out int nbOrdinaires, out int nbPrioritaires) {
+        static int NbClientsPrioritairesEtOrdinaires(int nbArrivees, int x0, int a, int c, int m, out int nbOrdinaires, out int nbPrioritaires) {
+            double u1;
             int x1 = x0;
-            double u1 = 0;
             nbOrdinaires = 0;
             nbPrioritaires = 0;
 
@@ -305,7 +327,6 @@ namespace ProjetMath {
                 for (int temps = 1; temps <= tempsSimulation; temps++) {
                     int nbArrivées, nbOrdinaires, nbPrioritaires, nbPrioritairesDéchus;
 
-
                     if (nbStations == nbStationsMin && temps <= 20) {
                         Console.WriteLine($"Temps : {temps} minute(s)");
                         Console.WriteLine($"- Début de minute :");
@@ -318,7 +339,7 @@ namespace ProjetMath {
                     }
 
                     X0 = NbArriveesGenerees(X0, a, c, m, out nbArrivées);
-                    X0 = NbClientsPrioritaires(nbArrivées, X0, a, c, m, out nbOrdinaires, out nbPrioritaires);
+                    X0 = NbClientsPrioritairesEtOrdinaires(nbArrivées, X0, a, c, m, out nbOrdinaires, out nbPrioritaires);
 
                     if (nbStations == nbStationsMin && temps <= 20) {
                         Console.WriteLine($" {nbArrivées} nouveau(x) client(s) : {nbOrdinaires} ordinaire(s) et {nbPrioritaires} prioritaire(s)");
@@ -340,6 +361,9 @@ namespace ProjetMath {
                             filePrioritaire--;
                             X0 = DureeGeneree(X0, a, c, m, stations[0]);
                             stations[0].statusClient = "prioritaire";
+                            if (nbStations == nbStationsMin && temps <= 20) {
+                                Console.WriteLine($" Nouveau client {stations[0].statusClient} dans la station n°{1} : durée d'attente de {stations[0].tempsRestant} minute(s)");
+                            }
                             couts[iCouts].clientsPrioritaires += 1.0 / 60 * stations[0].tempsRestant * 40;
                             couts[iCouts].stationsPrioritairesOccupées += 1.0 / 60 * stations[0].tempsRestant * 75;
                             stations[0].tempsRestant--;
@@ -357,6 +381,9 @@ namespace ProjetMath {
                                 fileOrdinaire--;
                                 X0 = DureeGeneree(X0, a, c, m, stations[iStation]);
                                 stations[iStation].statusClient = "ordinaire";
+                                if (nbStations == nbStationsMin && temps <= 20) {
+                                    Console.WriteLine($" Nouveau client {stations[iStation].statusClient} dans la station n°{iStation + 1} : durée d'attente de {stations[iStation].tempsRestant} minute(s)");
+                                }
                                 couts[iCouts].clientsOrdinaires += 1.0 / 60 * stations[iStation].tempsRestant * 25;
                                 couts[iCouts].stationsOrdinairesOccupées += 1.0 / 60 * stations[iStation].tempsRestant * 50;
                                 stations[iStation].tempsRestant--;
@@ -364,6 +391,9 @@ namespace ProjetMath {
                                 filePrioritaire--;
                                 X0 = DureeGeneree(X0, a, c, m, stations[iStation]);
                                 stations[iStation].statusClient = "prioritaire";
+                                if (nbStations == nbStationsMin && temps <= 20) {
+                                    Console.WriteLine($" Nouveau client {stations[iStation].statusClient} dans la station n°{iStation + 1} : durée d'attente de {stations[iStation].tempsRestant} minute(s)");
+                                }
                                 couts[iCouts].clientsPrioritaires += 1.0 / 60 * stations[iStation].tempsRestant * 40;
                                 couts[iCouts].stationsOrdinairesOccupées += 1.0 / 60 * stations[iStation].tempsRestant * 50;
                                 stations[iStation].tempsRestant--;
