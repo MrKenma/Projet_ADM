@@ -233,6 +233,25 @@ namespace ProjetMath {
                     Console.WriteLine($" Probabilité (pi) : {pi[i]}\n");
                 }
             }
+
+            string[] tailleSaut = new string[max];
+            for (int i = 0; i < max; i++) {
+                string contenu = "";
+                if (tabCourses[i] == 0) {
+                    if (contenu.CompareTo("") == 0) {
+                        contenu += $"[{i + 1}";
+                    } else {
+                        contenu += $", {i + 1}";
+                    }
+                } else {
+                    if (contenu.CompareTo("") == 0) {
+                        tailleSaut[i] = $"{i + 1}";
+                    } else {
+                        contenu += $", {i + 1}]";
+                        tailleSaut[i] = contenu;
+                    }
+                }
+            }
         }
 
         #endregion
