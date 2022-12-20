@@ -37,6 +37,50 @@ namespace ProjetMath {
             return $"Durée restante = {tempsRestant} min, statut client = \"{statusClient}\"";
         }
     }
+
+    class TabFrequences {
+        public List<int> valeurs = new List<int>();
+        public int ri;          // Fréquence observée
+        public double pi;
+        public double nFoisPi;  // Fréquence théorique
+        public double X2Observable;
+        
+        public TabFrequences(int valeur, int ri, double pi, double nFoisPi) {
+            this.ri = ri;
+            this.pi = pi;
+            this.nFoisPi = nFoisPi;
+            valeurs.Add(valeur);
+            X2Observable = Math.Pow(ri - nFoisPi, 2) / nFoisPi;
+        }
+
+        public String Valeur(int max) {
+            StringBuilder output = new StringBuilder();
+
+            if (valeurs.Contains(max)) {
+                output.Append($">={valeurs.Min()}");
+            } else {
+                if (valeurs.Count > 1) {
+                    output.Append($"[{valeurs[0]}");
+                    for (int i = 1; i < valeurs.Count(); i++) {
+                        output.Append($", {valeurs[i]}");
+                    }
+                    output.Append("]");
+                } else {
+                    output.Append(valeurs[0]);
+                }
+            }
+
+            return output.ToString();
+        }
+
+        public String GetPi() {
+            return pi.ToString("0.00000");
+        }
+
+        public String GetNFoisPi() {
+            return nFoisPi.ToString("0.00000");
+        }
+    }
     #endregion 
     class Program {
         #region Partie 1 : Génération d'une suite de nombres aléatoires
@@ -155,7 +199,7 @@ namespace ProjetMath {
                 tabSaut[nbSaut] = saut;
                 nbSaut++;
             }
-            Console.WriteLine($" Nombre de valeurs ignorées : {cptIgnored}\n");
+            //Console.WriteLine($" Nombre de valeurs ignorées : {cptIgnored}\n");
 
             return cptIgnored;
         }
@@ -169,33 +213,147 @@ namespace ProjetMath {
             return fact;
         }
 
+        static String Etape1() {
+            StringBuilder output = new StringBuilder();
+
+            output.AppendLine("Etape 1 :");
+            output.AppendLine("H0 : la suite est acceptable pour le test des courses");
+            output.AppendLine("H1 : la suite n'est pas acceptable pour le test des courses");
+
+            return output.ToString();
+        }
+
+        static String Etape2(double alpha) {
+            StringBuilder output = new StringBuilder();
+
+            output.AppendLine("Etape 2 :");
+            output.AppendLine($"Le niveau d'incertitude α = {alpha}");
+
+            return output.ToString();
+        }
+
+        static String Etape3(int max, int n, List<TabFrequences> tabFrequences, ref bool regroupementNecessaire) {
+            StringBuilder output = new StringBuilder();
+            double sommePi = tabFrequences.Sum(tab => tab.pi);
+            double sommeNFoisPi = tabFrequences.Sum(tab => tab.nFoisPi);
+            double sommeX2Observable = tabFrequences.Sum(tab => tab.X2Observable);
+
+            output.AppendLine("Etape 3 :");
+            output.AppendLine("-------------------------------------------------------------------------------------------");
+            output.AppendLine("     xi     |     ri     |      pi      |      n * pi      |  (ri - n * pi)^(2) / (n * pi)");
+            output.AppendLine("-------------------------------------------------------------------------------------------");
+            foreach (TabFrequences tab in tabFrequences) {
+                output.AppendLine($"     {tab.Valeur(max)}      |    {tab.ri}\t |    {tab.GetPi()}   |    {tab.GetNFoisPi()}\t   |    {tab.X2Observable}");
+                output.AppendLine("-------------------------------------------------------------------------------------------");
+                if (tab.nFoisPi < 5) {
+                    regroupementNecessaire = true;
+                }
+            }
+
+            output.AppendLine($"    Total   |    {n}    |      {sommePi}       |       {sommeNFoisPi}       |  X2obs = {sommeX2Observable}");
+            output.AppendLine("-------------------------------------------------------------------------------------------");
+
+            return output.ToString();
+        }
+
+        static String Etape4(int max, int n, List<TabFrequences> tabFrequences, ref bool regroupementNecessaire, ref bool regroupementImpossible) {
+            StringBuilder output = new StringBuilder();
+
+            output.AppendLine("Etape 4 :");
+
+            if (regroupementNecessaire) {
+                output.AppendLine("Regroupement nécessaire !");
+                regroupementNecessaire = false;
+
+                // Regroupement
+                int iVal = max - 1;
+                while (iVal >= 0) {
+                    if (tabFrequences[iVal].nFoisPi < 5) {
+                        if (iVal == 0) {
+                            output.AppendLine("Regroupement impossible, n < 5 !");
+                            regroupementImpossible = true;
+                        } else {
+                            foreach (int val in tabFrequences[iVal].valeurs) {
+                                tabFrequences[iVal - 1].valeurs.Add(val);
+                            }
+                            tabFrequences.RemoveAt(iVal);
+                        }
+                    }
+
+                    iVal--;
+                }
+
+                if (!regroupementImpossible) {
+                    // Retour étape 3
+                    output.AppendLine("=> Retour à l'étape 3");
+                    output.AppendLine(Etape3(max, n, tabFrequences, ref regroupementNecessaire));
+
+                    output.AppendLine("\n");
+                    output.AppendLine(Etape4(max, n, tabFrequences, ref regroupementNecessaire, ref regroupementImpossible));
+                }
+            } else {
+                output.AppendLine("Les contraintes sont respectées !");
+            }
+
+            return output.ToString();
+        }
+
+        static String Etape5(int max, int n, List<TabFrequences> tabFrequences, bool regroupementImpossible, ref double chiCarré) {
+            StringBuilder output = new StringBuilder();
+            int v = max - 1;
+            int sommeRi = tabFrequences.Sum(tab => tab.ri);
+            double[] tabChiCarré = {3.841, 5.991, 7.815, 9.488, 11.070, 12.592, 14.067, 15.507, 16.919};
+
+            output.AppendLine("Etape 5 :");
+            output.AppendLine($"v = {max} - 1 = {v}");
+            output.AppendLine($"Contrainte n*pi >= 5 : {(regroupementImpossible ? "KO" : "OK")}");
+            if (v > 0) {
+                chiCarré = tabChiCarré[v - 1];
+                output.AppendLine($"Zone de non-rejet = [0;{chiCarré.ToString("0.000")}]");
+            } else {
+                output.AppendLine("v = 0, impossible d'établir une zone de non rejet");
+            }
+
+            return output.ToString();
+        }
+
+        static String Etape6(double chiCarré, double alpha, List<TabFrequences> tabFrequences) {
+            StringBuilder output = new StringBuilder();
+            double X2Observable = tabFrequences.Sum(tab => tab.X2Observable);
+            bool valide = X2Observable >= 0 && X2Observable <= chiCarré; 
+
+            output.AppendLine("Etape 6 :");
+            output.AppendLine($"La valeur {X2Observable} se trouve {(valide ? "à l'intérieur" : "en dehors")} " +
+                $"de la zone de non-rejet [0;{chiCarré.ToString("0.000")}]. Avec un niveau d'incertitude alpha = {alpha}, " +
+                $"nous pouvons donc {(valide ? "accepter l'hypothèse H0" : "rejeter l'hypothèse H0 au profit de H1")}.");
+
+            return output.ToString();
+        }
+
         static void TestDesCourses(int[] nombres, int[] tabSaut) {
-            // 6 étapes :
-            // Etape 1 : poser une hypothèse H0 (suite générée acceptable ou non)
-            // Etape 2 : fixer le niveau d'incertitude alpha (en général alpha = 5%)
-            // Etape 3 : tableau recensé des fréquences observées et des fréquences théoriques + calcul de la statistique observable X2v
-            // Etape 4 : vérifier les contraintes à respecter pour chaque test et, le cas échéant, retourner à l'étape 3 en effectuant les regroupements
-            // Etape 5 : établir la zone de non-rejet en fonction du nombre de degrés de liberté
-            // Etape 6 : prendre une décision, rejet ou non-rejet de l'hypothèse
-
             Console.WriteLine("-------------------- Test des courses --------------------");
+            // Etape 1 : poser une hypothèse H0 (suite générée acceptable ou non)
+            Console.WriteLine(Etape1());
+            // Etape 2 : fixer le niveau d'incertitude alpha (en général alpha = 5%)
+            double alpha = 0.05;
+            Console.WriteLine(Etape2(alpha));
 
+            // Création du tableau des sauts
             int cptIgnored = CreationTabSaut(nombres, tabSaut);
             int n = nombres.Length - cptIgnored;
 
+            // Détermination de la taille max des sauts
             int max = 0;
-
             for (int i = 0; i < tabSaut.Length; i++) {
                 if (max < tabSaut[i]) {
                     max = tabSaut[i];
                 }
             }
 
+            // Comptage du nombre de saut de chaque taille 
             int[] tabCourses = new int[max];
             int valeur = 0;
-
             for (int i = 0; i < tabSaut.Length; i++) {
-
                 if (tabSaut[i] > 0) {
                     valeur = tabSaut[i];
 
@@ -203,55 +361,42 @@ namespace ProjetMath {
                 }
             }
 
-            // Regroupement
-            double[] pi = new double[max];
+            // Remplissage du tableau de valeurs de fréquences (valeur, ri, pi, n*pi et )
+            List<TabFrequences> tabFrequences = new List<TabFrequences>();
+
             for (int i = 0; i < max; i++) {
                 double fact = CalculFactorielle(i + 2);
-                pi[i] = (i + 1) / fact;
+                double pi = (i + 1) / fact;
+                tabFrequences.Add(new TabFrequences(i + 1, tabCourses[i], pi, n*pi));
             }
 
-            int iVal = max - 1;
-            while (iVal >= 0) {
-                if (n * pi[iVal] < 5) {
-                    if (iVal == 0) {
-                        Console.WriteLine("Regroupement impossible, n < 5 !");
-                    } else {
-                        tabCourses[iVal - 1] += tabCourses[iVal];
-                        pi[iVal - 1] += pi[iVal];
-                        tabCourses[iVal] = 0;
-                        pi[iVal] = 0;
-                    }
-                }
+            // Si la somme des n*pi ne donne pas n
+            double sommeNFoisPi = tabFrequences.Sum(val => val.nFoisPi);
+            if (Math.Round(sommeNFoisPi) != n) {
+                int val = tabFrequences.Count + 1;
+                double pi = 1 - tabFrequences.Sum(x => x.pi);
+                double nFoisPi = n - sommeNFoisPi;
 
-                iVal--;
+                tabFrequences.Add(new TabFrequences(val, 0, pi, nFoisPi));
+
+                max++;
             }
 
-            for (int i = 0; i < max; i++) {
-                if (tabCourses[i] != 0) {
-                    Console.WriteLine($" Taille du saut : {i + 1}");
-                    Console.WriteLine($" Nombre de sauts (ri) : {tabCourses[i]}");
-                    Console.WriteLine($" Probabilité (pi) : {pi[i]}\n");
-                }
-            }
+            // Etape 3 : tableau recensé des fréquences observées et des fréquences théoriques + calcul de la statistique observable X2v
+            bool regroupementNecessaire = false;
+            Console.WriteLine(Etape3(max, n, tabFrequences, ref regroupementNecessaire));
 
-            string[] tailleSaut = new string[max];
-            for (int i = 0; i < max; i++) {
-                string contenu = "";
-                if (tabCourses[i] == 0) {
-                    if (contenu.CompareTo("") == 0) {
-                        contenu += $"[{i + 1}";
-                    } else {
-                        contenu += $", {i + 1}";
-                    }
-                } else {
-                    if (contenu.CompareTo("") == 0) {
-                        tailleSaut[i] = $"{i + 1}";
-                    } else {
-                        contenu += $", {i + 1}]";
-                        tailleSaut[i] = contenu;
-                    }
-                }
-            }
+            // Etape 4 : vérifier les contraintes à respecter pour chaque test et, le cas échéant, retourner à l'étape 3 en effectuant les regroupements
+            bool regroupementImpossible = false;
+            Console.WriteLine(Etape4(max, n, tabFrequences, ref regroupementNecessaire, ref regroupementImpossible));
+
+            // Affichage :
+            // Etape 5 : établir la zone de non-rejet en fonction du nombre de degrés de liberté
+            double chiCarré = 0;
+            Console.WriteLine(Etape5(max, n, tabFrequences, regroupementImpossible, ref chiCarré));
+
+            // Etape 6 : prendre une décision, rejet ou non-rejet de l'hypothèse
+            Console.WriteLine(Etape6(chiCarré, alpha, tabFrequences));
         }
 
         #endregion
