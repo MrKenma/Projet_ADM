@@ -50,7 +50,7 @@ namespace ProjetMath {
             this.pi = pi;
             this.nFoisPi = nFoisPi;
             valeurs.Add(valeur);
-            X2Observable = Math.Pow(ri - nFoisPi, 2) / nFoisPi;
+            SetX2Observable();
         }
 
         public String Valeur(int max) {
@@ -71,6 +71,10 @@ namespace ProjetMath {
             }
 
             return output.ToString();
+        }
+
+        public void SetX2Observable() {
+            X2Observable = Math.Pow(ri - nFoisPi, 2) / nFoisPi;
         }
 
         public String GetPi() {
@@ -128,8 +132,8 @@ namespace ProjetMath {
                     facteursPremiersDeM.Add(i);
                 }
             }
-            foreach (int num in facteursPremiersDeM) {
-                if ((a - 1) % num != 0) {
+            foreach (int p in facteursPremiersDeM) {
+                if ((a - 1) % p != 0) {
                     Console.WriteLine(" Pour tout p, facteur premier de m, on a (a-1) multiple de p : KO");
                     return false;
                 }
@@ -256,7 +260,7 @@ namespace ProjetMath {
             return output.ToString();
         }
 
-        static String Etape4(int max, int n, List<TabFrequences> tabFrequences, ref bool regroupementNecessaire, ref bool regroupementImpossible) {
+        static String Etape4(ref int max, int n, List<TabFrequences> tabFrequences, ref bool regroupementNecessaire, ref bool regroupementImpossible) {
             StringBuilder output = new StringBuilder();
 
             output.AppendLine("Etape 4 :");
@@ -276,6 +280,11 @@ namespace ProjetMath {
                             foreach (int val in tabFrequences[iVal].valeurs) {
                                 tabFrequences[iVal - 1].valeurs.Add(val);
                             }
+                            tabFrequences[iVal - 1].ri += tabFrequences[iVal].ri;
+                            tabFrequences[iVal - 1].pi += tabFrequences[iVal].pi;
+                            tabFrequences[iVal - 1].nFoisPi += tabFrequences[iVal].nFoisPi;
+                            tabFrequences[iVal - 1].SetX2Observable();
+
                             tabFrequences.RemoveAt(iVal);
                         }
                     }
@@ -283,13 +292,16 @@ namespace ProjetMath {
                     iVal--;
                 }
 
+                // On ajuste la valeur de max
+                max = tabFrequences.Count;
+
                 if (!regroupementImpossible) {
                     // Retour étape 3
                     output.AppendLine("=> Retour à l'étape 3");
                     output.AppendLine(Etape3(max, n, tabFrequences, ref regroupementNecessaire));
 
                     output.AppendLine("\n");
-                    output.AppendLine(Etape4(max, n, tabFrequences, ref regroupementNecessaire, ref regroupementImpossible));
+                    output.AppendLine(Etape4(ref max, n, tabFrequences, ref regroupementNecessaire, ref regroupementImpossible));
                 }
             } else {
                 output.AppendLine("Les contraintes sont respectées !");
@@ -301,7 +313,6 @@ namespace ProjetMath {
         static String Etape5(int max, int n, List<TabFrequences> tabFrequences, bool regroupementImpossible, ref double chiCarré) {
             StringBuilder output = new StringBuilder();
             int v = max - 1;
-            int sommeRi = tabFrequences.Sum(tab => tab.ri);
             double[] tabChiCarré = {3.841, 5.991, 7.815, 9.488, 11.070, 12.592, 14.067, 15.507, 16.919};
 
             output.AppendLine("Etape 5 :");
@@ -311,6 +322,7 @@ namespace ProjetMath {
                 chiCarré = tabChiCarré[v - 1];
                 output.AppendLine($"Zone de non-rejet = [0;{chiCarré.ToString("0.000")}]");
             } else {
+                chiCarré = 0;
                 output.AppendLine("v = 0, impossible d'établir une zone de non rejet");
             }
 
@@ -386,11 +398,11 @@ namespace ProjetMath {
             bool regroupementNecessaire = false;
             Console.WriteLine(Etape3(max, n, tabFrequences, ref regroupementNecessaire));
 
+            // si regroupement, max change
             // Etape 4 : vérifier les contraintes à respecter pour chaque test et, le cas échéant, retourner à l'étape 3 en effectuant les regroupements
             bool regroupementImpossible = false;
-            Console.WriteLine(Etape4(max, n, tabFrequences, ref regroupementNecessaire, ref regroupementImpossible));
+            Console.WriteLine(Etape4(ref max, n, tabFrequences, ref regroupementNecessaire, ref regroupementImpossible));
 
-            // Affichage :
             // Etape 5 : établir la zone de non-rejet en fonction du nombre de degrés de liberté
             double chiCarré = 0;
             Console.WriteLine(Etape5(max, n, tabFrequences, regroupementImpossible, ref chiCarré));
@@ -476,6 +488,7 @@ namespace ProjetMath {
             int iCouts = 0;
             int X0Init = X0;
 
+            // Boucle du nombre de station minimal au nombre de station maximal
             for (int nbStations = nbStationsMin; nbStations <= nbStationsMax; nbStations++) {
                 Console.WriteLine($"---------- {nbStations} stations ----------");
                 couts[iCouts] = new Couts(nbStations);
@@ -488,6 +501,7 @@ namespace ProjetMath {
                     stations[j] = new Station();
                 }
 
+                // Boucle sur les 600 minutes
                 for (int temps = 1; temps <= tempsSimulation; temps++) {
                     int nbArrivées, nbOrdinaires, nbPrioritaires, nbPrioritairesDéchus;
 
@@ -502,17 +516,16 @@ namespace ProjetMath {
                         Console.WriteLine($"  File prioritaire : {filePrioritaire} client(s) présent(s) dans la file");
                     }
 
+                    // Génération du nombre de nouveaux clients ordinaires et prioritaires
                     X0 = NbArriveesGenerees(X0, a, c, m, out nbArrivées);
                     X0 = NbClientsPrioritairesEtOrdinaires(nbArrivées, X0, a, c, m, out nbOrdinaires, out nbPrioritaires);
 
                     if (nbStations == nbStationsMin && temps <= 20) {
                         Console.WriteLine($" {nbArrivées} nouveau(x) client(s) : {nbOrdinaires} ordinaire(s) et {nbPrioritaires} prioritaire(s)");
-                        Console.WriteLine(" Après placement des nouveaux clients :");
-                        Console.WriteLine($"  File ordinaire : {fileOrdinaire} client(s) présent(s) dans la file");
-                        Console.WriteLine($"  File prioritaire : {filePrioritaire} client(s) présent(s) dans la file");
                     }
 
-                    while (filePrioritaire < 5 && nbPrioritaires > 0) {
+                        // Placement des nouveaux clients dans la file prioritaire puis dans la file ordinaire
+                        while (filePrioritaire < 5 && nbPrioritaires > 0) {
                         filePrioritaire++;
                         nbPrioritaires--;
                     }
@@ -520,8 +533,15 @@ namespace ProjetMath {
                     fileOrdinaire += nbOrdinaires + nbPrioritairesDéchus;
                     couts[iCouts].prioritairesDéchus += 30 * nbPrioritairesDéchus;
 
-                    if (stations[0].tempsRestant == 0) {
-                        if (filePrioritaire != 0) {
+                    if (nbStations == nbStationsMin && temps <= 20) {
+                        Console.WriteLine(" Après placement des nouveaux clients :");
+                        Console.WriteLine($"  File ordinaire : {fileOrdinaire} client(s) présent(s) dans la file");
+                        Console.WriteLine($"  File prioritaire : {filePrioritaire} client(s) présent(s) dans la file");
+                    }
+
+                    // Station pour clients prioritaires
+                    if (stations[0].tempsRestant == 0) {        // S'il n'y plus personnes à cette station
+                        if (filePrioritaire != 0) {     // S'il reste des clients dans la file prioritaire
                             filePrioritaire--;
                             X0 = DureeGeneree(X0, a, c, m, stations[0]);
                             stations[0].statusClient = "prioritaire";
@@ -531,17 +551,18 @@ namespace ProjetMath {
                             couts[iCouts].clientsPrioritaires += 1.0 / 60 * stations[0].tempsRestant * 40;
                             couts[iCouts].stationsPrioritairesOccupées += 1.0 / 60 * stations[0].tempsRestant * 75;
                             stations[0].tempsRestant--;
-                        } else {
+                        } else {    // S'il n'y a personne dans la file prioritaire
                             stations[0].statusClient = "inexistant";
                             couts[iCouts].stationsInoccupées += 1.0 / 60 * 20;
                         }
-                    } else {
+                    } else {    // S'il a toujours quelqu'un à cette station
                         stations[0].tempsRestant--;
                     }
 
-                    for (int iStation = 1; iStation < nbStations; iStation++) {
-                        if (stations[iStation].tempsRestant == 0) {
-                            if (fileOrdinaire != 0) {
+                    // Stations normales
+                    for (int iStation = 1; iStation < nbStations; iStation++) {     // Pour chaque station ordinaire
+                        if (stations[iStation].tempsRestant == 0) {     // S'il n'y plus personnes à cette station
+                            if (fileOrdinaire != 0) {        // S'il reste des clients dans la file ordinaire
                                 fileOrdinaire--;
                                 X0 = DureeGeneree(X0, a, c, m, stations[iStation]);
                                 stations[iStation].statusClient = "ordinaire";
@@ -551,7 +572,7 @@ namespace ProjetMath {
                                 couts[iCouts].clientsOrdinaires += 1.0 / 60 * stations[iStation].tempsRestant * 25;
                                 couts[iCouts].stationsOrdinairesOccupées += 1.0 / 60 * stations[iStation].tempsRestant * 50;
                                 stations[iStation].tempsRestant--;
-                            } else if (filePrioritaire != 0) {
+                            } else if (filePrioritaire != 0) {       // Si la file ordinaire est vide mais pas la file prioritaire
                                 filePrioritaire--;
                                 X0 = DureeGeneree(X0, a, c, m, stations[iStation]);
                                 stations[iStation].statusClient = "prioritaire";
@@ -561,11 +582,11 @@ namespace ProjetMath {
                                 couts[iCouts].clientsPrioritaires += 1.0 / 60 * stations[iStation].tempsRestant * 40;
                                 couts[iCouts].stationsOrdinairesOccupées += 1.0 / 60 * stations[iStation].tempsRestant * 50;
                                 stations[iStation].tempsRestant--;
-                            } else {
+                            } else {    // Si les deux files sont vide
                                 stations[iStation].statusClient = "inexistant";
                                 couts[iCouts].stationsInoccupées += 1.0 / 60 * 20;
                             }
-                        } else {
+                        } else {    // S'il a toujours quelqu'un à cette station
                             stations[iStation].tempsRestant--;
                         }
                     }
@@ -629,7 +650,6 @@ namespace ProjetMath {
                 int X1;
 
                 // éviter de placer les valeurs dans un tableau, ça va utiliser beaucoup de place mémoire
-                
                 nombresAleatoires[0] = X0;
                 for (int i = 1; i < m; i++) {
                     X1 = (a * X0 + c) % m;
