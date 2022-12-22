@@ -56,7 +56,7 @@ namespace ProjetMath {
         public String Valeur(int max) {
             StringBuilder output = new StringBuilder();
 
-            if (valeurs.Contains(max)) {
+            if (valeurs.Contains(max) && ri == 0) {
                 output.Append($">={valeurs.Min()}");
             } else {
                 if (valeurs.Count > 1) {
@@ -254,7 +254,7 @@ namespace ProjetMath {
                 }
             }
 
-            output.AppendLine($"    Total   |    {n}    |      {sommePi}       |       {sommeNFoisPi}       |  X2obs = {sommeX2Observable}");
+            output.AppendLine($"    Total   |    {n}    |      {sommePi.ToString("0.00000")}       |       {sommeNFoisPi.ToString("0.00000")}       |  X2obs = {sommeX2Observable}");
             output.AppendLine("-------------------------------------------------------------------------------------------");
 
             return output.ToString();
@@ -297,7 +297,7 @@ namespace ProjetMath {
 
                 if (!regroupementImpossible) {
                     // Retour étape 3
-                    output.AppendLine("=> Retour à l'étape 3");
+                    output.AppendLine("=> Retour à l'étape 3\n");
                     output.AppendLine(Etape3(max, n, tabFrequences, ref regroupementNecessaire));
 
                     output.AppendLine("\n");
@@ -524,8 +524,8 @@ namespace ProjetMath {
                         Console.WriteLine($" {nbArrivées} nouveau(x) client(s) : {nbOrdinaires} ordinaire(s) et {nbPrioritaires} prioritaire(s)");
                     }
 
-                        // Placement des nouveaux clients dans la file prioritaire puis dans la file ordinaire
-                        while (filePrioritaire < 5 && nbPrioritaires > 0) {
+                    // Placement des nouveaux clients dans la file prioritaire puis dans la file ordinaire
+                    while (filePrioritaire < 5 && nbPrioritaires > 0) {
                         filePrioritaire++;
                         nbPrioritaires--;
                     }
@@ -635,10 +635,10 @@ namespace ProjetMath {
         }
         #endregion
         static void Main(string[] args) {
-            int X0 = 19;
-            int a = 261;
-            int c = 7;
-            int m = 13000;
+            int X0 = 19;    // 19
+            int a = 61;    // 261
+            int c = 49;      // 7
+            int m = 1024;  // 13 000
             bool nombresValides = VerificationValeurs(X0, a, c, m);
 
             if (!nombresValides) {
