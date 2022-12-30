@@ -352,7 +352,7 @@ namespace ProjetMath {
 
             // Création du tableau des sauts
             int cptIgnored = CreationTabSaut(nombres, tabSaut);
-            int n = nombres.Length - cptIgnored;
+            int n = 0;
 
             // Détermination de la taille max des sauts
             int max = 0;
@@ -370,6 +370,7 @@ namespace ProjetMath {
                     valeur = tabSaut[i];
 
                     tabCourses[valeur - 1]++;
+                    n++;
                 }
             }
 
@@ -414,8 +415,8 @@ namespace ProjetMath {
         #endregion
         #region Partie 2 : Calcul du nombre de stations optimal
         // Partie 2 : implémentation du DA
-        static int NbArriveesGenerees(int x0, int a, int c, int m, out int nbArrivees) {
-            int x1 = (a * x0 + c) % m;
+        static int NbArriveesGenerees(int x0, int a, int c, int m, out int nbArrivees) {    // on sort aussi nb arrivées par minute
+            int x1 = (a * x0 + c) % m;  // génération d'un nouveau nombre de la suite
             double u1 = (double)x1 / m;
 
             if (u1 < 0.1827)
@@ -442,17 +443,17 @@ namespace ProjetMath {
             return x1;
         }
 
-        static int NbClientsPrioritairesEtOrdinaires(int nbArrivees, int x0, int a, int c, int m, out int nbOrdinaires, out int nbPrioritaires) {
+        static int NbClientsPrioritairesEtOrdinaires(int nbArrivees, int x0, int a, int c, int m, out int nbOrdinaires, out int nbPrioritaires) {   // on sort nbPrioritaires et nbOrdinaires
             double u1;
             int x1 = x0;
             nbOrdinaires = 0;
             nbPrioritaires = 0;
 
             for (int i = 0; i < nbArrivees; i++) {
-                x1 = (a * x0 + c) % m;
+                x1 = (a * x0 + c) % m;  // génération d'un nouveau nombre de la suite
                 u1 = (double)x1 / m;
 
-                if (u1 < 0.30)
+                if (u1 < 0.70)      // 30% de clients prioritaires
                     nbPrioritaires++;
                 else
                     nbOrdinaires++;
@@ -531,7 +532,7 @@ namespace ProjetMath {
                     }
                     nbPrioritairesDéchus = nbPrioritaires;
                     fileOrdinaire += nbOrdinaires + nbPrioritairesDéchus;
-                    couts[iCouts].prioritairesDéchus += 30 * nbPrioritairesDéchus;
+                    couts[iCouts].prioritairesDéchus += 30 * nbPrioritairesDéchus;  // 30€ par prioritaire qui devient ordinaire
 
                     if (nbStations == nbStationsMin && temps <= 20) {
                         Console.WriteLine(" Après placement des nouveaux clients :");
@@ -548,12 +549,12 @@ namespace ProjetMath {
                             if (nbStations == nbStationsMin && temps <= 20) {
                                 Console.WriteLine($" Nouveau client {stations[0].statusClient} dans la station n°{1} : durée d'attente de {stations[0].tempsRestant} minute(s)");
                             }
-                            couts[iCouts].clientsPrioritaires += 1.0 / 60 * stations[0].tempsRestant * 40;
-                            couts[iCouts].stationsPrioritairesOccupées += 1.0 / 60 * stations[0].tempsRestant * 75;
+                            couts[iCouts].clientsPrioritaires += 1.0 / 60 * stations[0].tempsRestant * 40;  // 40€ par client prio par heure
+                            couts[iCouts].stationsPrioritairesOccupées += 1.0 / 60 * stations[0].tempsRestant * 75; // 75€ par station prio par heure
                             stations[0].tempsRestant--;
                         } else {    // S'il n'y a personne dans la file prioritaire
                             stations[0].statusClient = "inexistant";
-                            couts[iCouts].stationsInoccupées += 1.0 / 60 * 20;
+                            couts[iCouts].stationsInoccupées += 1.0 / 60 * 20; // 20€ par station inoccupée par heure
                         }
                     } else {    // S'il a toujours quelqu'un à cette station
                         stations[0].tempsRestant--;
@@ -569,8 +570,8 @@ namespace ProjetMath {
                                 if (nbStations == nbStationsMin && temps <= 20) {
                                     Console.WriteLine($" Nouveau client {stations[iStation].statusClient} dans la station n°{iStation + 1} : durée d'attente de {stations[iStation].tempsRestant} minute(s)");
                                 }
-                                couts[iCouts].clientsOrdinaires += 1.0 / 60 * stations[iStation].tempsRestant * 25;
-                                couts[iCouts].stationsOrdinairesOccupées += 1.0 / 60 * stations[iStation].tempsRestant * 50;
+                                couts[iCouts].clientsOrdinaires += 1.0 / 60 * stations[iStation].tempsRestant * 25; // 25€ par client ordi par heure
+                                couts[iCouts].stationsOrdinairesOccupées += 1.0 / 60 * stations[iStation].tempsRestant * 50;    // 50 par station ordi par heure
                                 stations[iStation].tempsRestant--;
                             } else if (filePrioritaire != 0) {       // Si la file ordinaire est vide mais pas la file prioritaire
                                 filePrioritaire--;
@@ -579,20 +580,20 @@ namespace ProjetMath {
                                 if (nbStations == nbStationsMin && temps <= 20) {
                                     Console.WriteLine($" Nouveau client {stations[iStation].statusClient} dans la station n°{iStation + 1} : durée d'attente de {stations[iStation].tempsRestant} minute(s)");
                                 }
-                                couts[iCouts].clientsPrioritaires += 1.0 / 60 * stations[iStation].tempsRestant * 40;
-                                couts[iCouts].stationsOrdinairesOccupées += 1.0 / 60 * stations[iStation].tempsRestant * 50;
+                                couts[iCouts].clientsPrioritaires += 1.0 / 60 * stations[iStation].tempsRestant * 40;   // 40€ par client prio par heure
+                                couts[iCouts].stationsOrdinairesOccupées += 1.0 / 60 * stations[iStation].tempsRestant * 50;    // 50€ par station ordi par heure
                                 stations[iStation].tempsRestant--;
                             } else {    // Si les deux files sont vide
                                 stations[iStation].statusClient = "inexistant";
-                                couts[iCouts].stationsInoccupées += 1.0 / 60 * 20;
+                                couts[iCouts].stationsInoccupées += 1.0 / 60 * 20;  // 20€ par station inoccupée par heure
                             }
                         } else {    // S'il a toujours quelqu'un à cette station
                             stations[iStation].tempsRestant--;
                         }
                     }
 
-                    couts[iCouts].clientsPrioritaires += 1.0 / 60 * filePrioritaire * 40;
-                    couts[iCouts].clientsOrdinaires += 1.0 / 60 * fileOrdinaire * 25;
+                    couts[iCouts].clientsPrioritaires += 1.0 / 60 * filePrioritaire * 40;   // 40€ par client prio par heure
+                    couts[iCouts].clientsOrdinaires += 1.0 / 60 * fileOrdinaire * 25;   // 25€ par client ordi par heure
 
                     if (nbStations == nbStationsMin && temps <= 20) {
                         Console.WriteLine($"- Fin de minute :");
@@ -635,10 +636,10 @@ namespace ProjetMath {
         }
         #endregion
         static void Main(string[] args) {
-            int X0 = 19;    // 19
-            int a = 61;    // 261
-            int c = 49;      // 7
-            int m = 1024;  // 13 000
+            int X0 = 19;    // 19   / 19
+            int a = 261;    // 61   / 261
+            int c = 7;      // 49   / 7
+            int m = 13000;  // 1024  / 13000
             bool nombresValides = VerificationValeurs(X0, a, c, m);
 
             if (!nombresValides) {
@@ -661,7 +662,7 @@ namespace ProjetMath {
                 // Si non : 600 * (1 + 9 + 1 + (9 * 1 + 1)) = 600 * 21 = 12600 
                 TestDesCourses(nombresAleatoires, tabSaut);
 
-                int nbStationsOptimal = NbStationsOptimal(2, 9, 600, X0, a, c, m);
+                int nbStationsOptimal = NbStationsOptimal(4, 9, 600, X0, a, c, m);
                 Console.WriteLine($"-------------------- Résultat des tests --------------------");
                 Console.WriteLine($" Nombre de stations optimal : {nbStationsOptimal}");
             }
