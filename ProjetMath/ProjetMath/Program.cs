@@ -453,7 +453,7 @@ namespace ProjetMath {
                 x1 = (a * x0 + c) % m;  // génération d'un nouveau nombre de la suite
                 u1 = (double)x1 / m;
 
-                if (u1 < 0.70)      // 30% de clients prioritaires
+                if (u1 < 0.30)      // 30% de clients prioritaires
                     nbPrioritaires++;
                 else
                     nbOrdinaires++;
